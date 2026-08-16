@@ -1,0 +1,12 @@
+name = "nip05api"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# KV 命名空间，id 通过 `npx wrangler kv namespace create nip05kv` 创建后填入
+[[kv_namespaces]]
+binding = "nip05kv"
+id = "replace-with-your-kv-namespace-id"
+
+# 允许执行增删改的 nostr 公钥（hex），多个用逗号分隔
+[vars]
+ADMIN_PUBKEYS = "replace-with-your-hex-pubkey"
