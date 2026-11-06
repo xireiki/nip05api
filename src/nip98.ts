@@ -21,18 +21,6 @@ function tag(event: NostrEvent, name: string): string | undefined {
   return event.tags.find(([key]) => key === name)?.[1];
 }
 
-/** 规范化 URL：域名不区分大小写，仅主机部分转小写；路径与查询保持原样（区分大小写）。 */
-function canonicalUrl(raw: string): string | null {
-  try {
-    const url = new URL(raw);
-    url.host = url.host.toLowerCase();
-    url.hash = '';
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
-
 /**
  * 按 NIP-98 校验 Authorization 头，返回签名者的 pubkey。
  * 校验：kind=27235、created_at 新鲜、u 与请求 URL 完全一致、method 一致、
@@ -47,8 +35,8 @@ export async function verifyNip98(request: Request, body?: ArrayBuffer): Promise
   const now = Math.floor(Date.now() / 1000);
   if (Math.abs(now - event.created_at) > MAX_AGE_SECONDS) return null;
 
-  const u = tag(event, 'u');
-  if (!u || canonicalUrl(u) !== canonicalUrl(request.url)) return null;
+  // NIP-98: u 必须与请求的绝对 URL（含查询参数）逐字符完全一致
+  if (tag(event, 'u') !== request.url) return null;
   if (tag(event, 'method') !== request.method) return null;
 
   if (BODY_METHODS.has(request.method) && body && body.byteLength > 0) {

@@ -132,13 +132,10 @@ describe('verifyNip98', () => {
     expect(await verifyNip98(bad)).toBeNull();
   });
 
-  it('treats host case in the u tag as insignificant', async () => {
-    const request = authRequest('GET', 'https://api.example.com/api/names');
-    const uppercaseHost = new Request('https://API.EXAMPLE.com/api/names', {
-      method: 'GET',
-      headers: { authorization: request.headers.get('authorization')! },
-    });
-    expect(await verifyNip98(uppercaseHost)).toBe(PUB);
+  it('requires the u tag to match the URL exactly (host case is not normalized)', async () => {
+    // u 标签用大写域名签名；实际 Request 的 host 会被 URL 解析规范化为小写，二者不一致
+    const request = authRequest('GET', 'https://API.EXAMPLE.com/api/names');
+    expect(await verifyNip98(request)).toBeNull();
   });
 
   it('accepts an uppercase-hex pubkey and returns it lowercase', async () => {
