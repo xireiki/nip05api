@@ -49,11 +49,12 @@ function toNip05(record: NameRecord): Record<string, unknown> {
 const cacheHeader = { 'cache-control': `public, max-age=${NIP05_CACHE_MAX_AGE}` };
 
 async function handleNip05Lookup(request: Request, env: Env): Promise<Response> {
-  const name = new URL(request.url).searchParams.get('name')?.toLowerCase() ?? '';
+  const requested = new URL(request.url).searchParams.get('name') ?? '';
   const store = createStore(env.nip05kv);
-  const record = await store.get(name);
-  if (!record) return json({ error: `name "${name}" not found` }, 404, cacheHeader);
-  return json(toNip05(record), 200, cacheHeader);
+  const record = await store.get(requested.toLowerCase());
+  if (!record) return json({ error: `name "${requested}" not found` }, 404, cacheHeader);
+  // 客户端按自己请求的 local-part 精确匹配 names 键，因此回显请求中的写法
+  return json(toNip05({ ...record, name: requested }), 200, cacheHeader);
 }
 
 async function handleAdmin(request: Request, env: Env): Promise<Response> {
@@ -98,7 +99,7 @@ async function handleAdmin(request: Request, env: Env): Promise<Response> {
   }
 
   if (request.method === 'DELETE') {
-    const name = new URL(request.url).searchParams.get('name');
+    const name = new URL(request.url).searchParams.get('name')?.toLowerCase();
     if (!name) throw badRequest('missing "name" query parameter');
     await authenticate(request, env);
     await store.del(name);
